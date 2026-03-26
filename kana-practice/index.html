@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日文五十音特訓</title>
+    <style>
+        /* --- 1. CSS 設計 (外觀與排版) --- */
+        :root {
+            --primary-color: #4A90E2;
+            --bg-color: #f4f7f9;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --success-color: #2ECC71;
+            --error-color: #E74C3C;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--text-color);
+        }
+
+        .app-container {
+            background-color: var(--card-bg);
+            width: 90%;
+            max-width: 400px;
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        .score-board {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .character-card {
+            background-color: var(--primary-color);
+            color: white;
+            font-size: 6rem;
+            font-weight: bold;
+            border-radius: 15px;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .character-card:hover {
+            transform: scale(1.02);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            width: 80%;
+            padding: 12px;
+            font-size: 1.2rem;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button:active {
+            transform: translateY(2px);
+        }
+
+        #feedback {
+            margin-top: 1rem;
+            font-weight: bold;
+            height: 1.5rem; /* 預留空間防止跳動 */
+        }
+
+        .correct { color: var(--success-color); }
+        .wrong { color: var(--error-color); }
+        
+        .mode-switch {
+            margin-bottom: 1rem;
+        }
+        
+        .mode-switch label {
+            margin: 0 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1>日文五十音特訓</h1>
+        
+        <div class="score-board">
+            <span>答對: <b id="score">0</b></span>
+            <span>連續: <b id="streak">0</b></span>
+        </div>
+
+        <div class="mode-switch">
+            <input type="radio" id="mode-hiragana" name="mode" value="h" checked>
+            <label for="mode-hiragana">平假名</label>
+            <input type="radio" id="mode-katakana" name="mode" value="k">
+            <label for="mode-katakana">片假名</label>
+        </div>
+
+        <div class="character-card" id="display-char">
+            あ
+        </div>
+
+        <div class="input-group">
+            <input type="text" id="user-input" placeholder="輸入羅馬拼音 (例如: a)" autocomplete="off">
+        </div>
+
+        <button onclick="checkAnswer()">提交答案</button>
+
+        <div id="feedback"></div>
+    </div>
+
+    <script>
+        /* --- 2. JavaScript 邏輯 (功能與互動) --- */
+
+        // 五十音資料庫 (這裡先列出「阿、卡、薩」三行作為範例，您可以自行擴充)
+        const kanaData = [
+            { r: 'a', h: 'あ', k: 'ア' }, { r: 'i', h: 'い', k: 'イ' }, { r: 'u', h: 'う', k: 'ウ' }, { r: 'e', h: 'え', k: 'エ' }, { r: 'o', h: 'お', k: 'オ' },
+            { r: 'ka', h: 'か', k: 'カ' }, { r: 'ki', h: 'き', k: 'キ' }, { r: 'ku', h: 'く', k: 'ク' }, { r: 'ke', h: 'け', k: 'ケ' }, { r: 'ko', h: 'こ', k: 'コ' },
+            { r: 'sa', h: 'さ', k: 'サ' }, { r: 'shi', h: 'し', k: 'シ' }, { r: 'su', h: 'す', k: 'ス' }, { r: 'se', h: 'せ', k: 'セ' }, { r: 'so', h: 'そ', k: 'ソ' },
+            { r: 'ta', h: 'た', k: 'タ' }, { r: 'chi', h: 'ち', k: 'チ' }, { r: 'tsu', h: 'つ', k: 'ツ' }, { r: 'te', h: 'て', k: 'テ' }, { r: 'to', h: 'と', k: 'ト' },
+            { r: 'na', h: 'な', k: 'ナ' }, { r: 'ni', h: 'に', k: 'ニ' }, { r: 'nu', h: 'ぬ', k: 'ヌ' }, { r: 'ne', h: 'ね', k: 'ネ' }, { r: 'no', h: 'の', k: 'ノ' }
+        ];
+
+        let currentQuestion = {};
+        let score = 0;
+        let streak = 0;
+
+        const displayChar = document.getElementById('display-char');
+        const userInput = document.getElementById('user-input');
+        const feedback = document.getElementById('feedback');
+        const scoreDisplay = document.getElementById('score');
+        const streakDisplay = document.getElementById('streak');
+        const radioHiragana = document.getElementById('mode-hiragana');
+        const radioKatakana = document.getElementById('mode-katakana');
+
+        // 初始化
+        window.onload = nextQuestion;
+
+        // 監聽 Enter 鍵
+        userInput.addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                checkAnswer();
+            }
+        });
+
+        // 監聽模式切換
+        radioHiragana.addEventListener('change', nextQuestion);
+        radioKatakana.addEventListener('change', nextQuestion);
+
+        function nextQuestion() {
+            // 清空輸入框與回饋
+            userInput.value = '';
+            feedback.className = ''; 
+            feedback.innerText = '';
+            
+            // 隨機選一個字
+            const randomIndex = Math.floor(Math.random() * kanaData.length);
+            currentQuestion = kanaData[randomIndex];
+
+            // 根據模式顯示平假名或片假名
+            if (radioHiragana.checked) {
+                displayChar.innerText = currentQuestion.h;
+            } else {
+                displayChar.innerText = currentQuestion.k;
+            }
+            
+            // 聚焦輸入框
+            userInput.focus();
+        }
+
+        function checkAnswer() {
+            const answer = userInput.value.trim().toLowerCase();
+            
+            if (answer === '') return;
+
+            if (answer === currentQuestion.r) {
+                // 答對了
+                feedback.innerText = '✅ 正確！ (' + currentQuestion.r + ')';
+                feedback.className = 'correct';
+                score++;
+                streak++;
+                scoreDisplay.innerText = score;
+                streakDisplay.innerText = streak;
+                
+                // 延遲一下自動跳下一題
+                setTimeout(nextQuestion, 1000);
+            } else {
+                // 答錯了
+                feedback.innerText = '❌ 錯誤，正確答案是: ' + currentQuestion.r;
+                feedback.className = 'wrong';
+                streak = 0;
+                streakDisplay.innerText = streak;
+                // 答錯不自動跳下一題，讓使用者看清楚
+            }
+        }
+    </script>
+</body>
+</html>
