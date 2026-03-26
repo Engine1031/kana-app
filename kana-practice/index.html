@@ -330,7 +330,7 @@
             margin-bottom: 30px;
         }
 
-        /* --- Modal 樣式 (不變) --- */
+        /* --- Modal 樣式 --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; }
         .modal-content { background: white; width: 95%; max-width: 550px; height: 85vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
@@ -373,7 +373,6 @@
         textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; resize: none; margin-bottom: 10px; }
         .btn-save-note { background-color: var(--note-color); color: white; width: 100%; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; }
         .btn-save-note:active { opacity: 0.9; }
-
     </style>
 </head>
 <body>
@@ -516,6 +515,45 @@
     </div>
 
     <script>
+        /* =========================================
+           語音發音功能 (Apple Safari 終極破解版)
+           ========================================= */
+        let audioUnlocked = false;
+
+        // 螢幕首次互動解鎖機制 (騙過 iOS 系統的靜音阻擋)
+        function unlockAudio() {
+            if (!audioUnlocked) {
+                const dummy = new SpeechSynthesisUtterance('');
+                dummy.volume = 0; // 靜音播放
+                window.speechSynthesis.speak(dummy);
+                window.speechSynthesis.cancel();
+                audioUnlocked = true;
+                // 解鎖後移除監聽器
+                document.removeEventListener('touchstart', unlockAudio);
+                document.removeEventListener('click', unlockAudio);
+            }
+        }
+        
+        // 綁定點擊與觸控事件來觸發解鎖
+        document.addEventListener('touchstart', unlockAudio, { once: true });
+        document.addEventListener('click', unlockAudio, { once: true });
+
+        function playKana(text) {
+            window.speechSynthesis.cancel(); // 停止先前的發音
+            const uttr = new SpeechSynthesisUtterance(text);
+            uttr.lang = 'ja-JP'; 
+            uttr.rate = 0.8; 
+
+            // 尋找日文語音包
+            const voices = window.speechSynthesis.getVoices();
+            const jaVoice = voices.find(v => v.lang === 'ja-JP' || v.lang.replace('_', '-') === 'ja-JP' || v.lang.includes('ja'));
+            
+            if (jaVoice) {
+                uttr.voice = jaVoice;
+            }
+            window.speechSynthesis.speak(uttr);
+        }
+
         /* --- 資料庫 --- */
         const rawData = [
             // 清音 t=0
@@ -567,7 +605,6 @@
             'cha': ['tixya'], 'chu': ['tixyu'], 'cho': ['tixyo'],
             'ja': ['zixya', 'jixya'], 'ju': ['zixyu', 'jixyu'], 'jo': ['zixyo', 'jixyo'],
         };
-
 
         /* --- 變數 --- */
         let questionPool = []; 
@@ -692,7 +729,6 @@
             // 重新載入題目以更新 UI
             applySettings();
         }
-
 
         /* --- 主邏輯 --- */
         function applySettings() {
@@ -914,7 +950,6 @@
             mainControls.style.display = 'none';
             judgeControls.style.display = 'flex';
         }
-
 
         /* --- 筆記本 Modal 邏輯 --- */
         function openNoteModal() {
