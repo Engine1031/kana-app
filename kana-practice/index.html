@@ -2,238 +2,1068 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日文五十音特訓</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>日文手寫 & 輸入特訓 (完整版)</title>
     <style>
-        /* --- 1. CSS 設計 (外觀與排版) --- */
+        /* --- CSS --- */
         :root {
-            --primary-color: #4A90E2;
-            --bg-color: #f4f7f9;
-            --card-bg: #ffffff;
-            --text-color: #333;
+            --primary-color: #4A90E2; 
+            --accent-color: #FFC107;
+            --bg-color: #f0f2f5;
             --success-color: #2ECC71;
             --error-color: #E74C3C;
+            --note-color: #3498DB; 
+            --text-color: #333;
+            --kana-k-color: #FF9F43;
+            --typing-color: #6a329f; /* 輸入模式專屬顏色 */
         }
 
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--bg-color);
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding-bottom: 50px; 
             color: var(--text-color);
+            touch-action: manipulation; 
+            overflow-y: auto; 
         }
 
         .app-container {
-            background-color: var(--card-bg);
-            width: 90%;
-            max-width: 400px;
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            padding: 15px;
             text-align: center;
+            box-sizing: border-box;
+            background: white;
+            min-height: 100vh; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            position: relative;
         }
 
-        h1 {
-            font-size: 1.5rem;
-            color: var(--primary-color);
-            margin-bottom: 1rem;
+        /* --- 頂部按鈕區 --- */
+        .top-nav {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+            gap: 10px;
         }
 
-        .score-board {
+        .btn-nav {
+            background-color: #6c757d;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-mistake { background-color: var(--error-color); }
+
+        /* --- 設定區域 --- */
+        .settings-panel {
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            text-align: left;
+            border: 1px solid #eee;
+        }
+
+        .settings-title {
+            font-weight: bold;
+            margin-bottom: 8px;
             font-size: 0.9rem;
             color: #666;
-            margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
+            align-items: center;
         }
 
-        .character-card {
-            background-color: var(--primary-color);
-            color: white;
-            font-size: 6rem;
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .checkbox-group label {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 2px 0;
+        }
+
+        .checkbox-group input { margin-right: 8px; transform: scale(1.1); }
+
+        .mode-toggle-group {
+            display: flex;
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .mode-toggle-group label {
+            flex: 1;
+            text-align: center;
+            padding: 6px;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: 0.2s;
+            white-space: nowrap; 
+        }
+
+        .mode-toggle-group input { display: none; }
+        .mode-toggle-group input:checked + label {
+            background: white;
             font-weight: bold;
-            border-radius: 15px;
-            padding: 2rem 0;
-            margin-bottom: 2rem;
-            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
-            transition: transform 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            color: var(--primary-color);
         }
 
-        .character-card:hover {
-            transform: scale(1.02);
+        /* --- 測驗模式切換 --- */
+        .test-mode-switch {
+            text-align: center;
+            margin: 15px 0;
+        }
+        .test-mode-switch label {
+            display: inline-block;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin: 0 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .test-mode-switch input:checked + label {
+            background-color: var(--typing-color);
+            border-color: var(--typing-color);
+            color: white;
+            font-weight: bold;
+        }
+        .test-mode-switch input { display: none; }
+
+
+        /* --- 題目與畫布/輸入框 --- */
+        .question-area {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 5px 0 10px 0;
+            height: 50px;
         }
 
-        .input-group {
-            margin-bottom: 1.5rem;
+        .romaji-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #2c3e50;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* 混合模式的標籤樣式 */
+        .type-tag {
+            font-size: 1rem;
+            border-radius: 4px;
+            padding: 2px 6px;
+            border: 1px solid;
+            vertical-align: middle;
+            font-weight: bold;
         }
 
-        input[type="text"] {
+        .bookmark-btn {
+            position: absolute;
+            right: 10px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #e0e0e0;
+            padding: 10px; 
+        }
+        .bookmark-btn.active { color: var(--accent-color); }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 15px auto;
+            border: 2px solid #333;
+            border-radius: 16px;
+            background-color: #fff;
+            /* 米字格 */
+            background-image: 
+                linear-gradient(#eee 1px, transparent 1px),
+                linear-gradient(90deg, #eee 1px, transparent 1px),
+                linear-gradient(45deg, transparent 49.5%, #f9f9f9 49.5%, #f9f9f9 50.5%, transparent 50.5%),
+                linear-gradient(-45deg, transparent 49.5%, #f9f9f9 49.5%, #f9f9f9 50.5%, transparent 50.5%);
+            background-size: 150px 150px, 150px 150px, 300px 300px, 300px 300px;
+            background-position: center;
+            cursor: crosshair;
+            touch-action: none; 
+        }
+
+        /* --- 輸入模式 UI --- */
+        .typing-input-area {
+            display: none; /* 預設隱藏 */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 15px auto;
+            border: 2px dashed var(--typing-color);
+            border-radius: 16px;
+            background-color: #f7f3fb;
+        }
+        .typing-kana-display {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--typing-color);
+            margin-bottom: 20px;
+            font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+        }
+        .typing-input {
             width: 80%;
             padding: 12px;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             text-align: center;
-            border: 2px solid #ddd;
+            border: 3px solid #ccc;
             border-radius: 8px;
             outline: none;
             transition: border-color 0.3s;
+            text-transform: lowercase;
+        }
+        .typing-input:focus {
+            border-color: var(--typing-color);
+        }
+        .typing-feedback {
+            margin-top: 10px;
+            font-size: 1rem;
+            min-height: 20px;
+            font-weight: bold;
+        }
+        .feedback-correct { color: var(--success-color); }
+        .feedback-wrong { color: var(--error-color); }
+
+        /* --- 答案區 --- */
+        .answer-box {
+            height: 100px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+            border-radius: 12px;
+            border: 2px dashed #ddd;
+            overflow: hidden;
         }
 
-        input[type="text"]:focus {
-            border-color: var(--primary-color);
+        .answer-text {
+            color: var(--primary-color);
+            font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+            font-weight: bold;
+            display: none;
+            line-height: 1;
+        }
+
+        .text-large { font-size: 4.5rem; }
+        .text-medium { font-size: 3rem; }
+
+        /* --- 按鈕 --- */
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
         }
 
         button {
-            background-color: var(--primary-color);
-            color: white;
+            padding: 12px 18px; 
             border: none;
-            padding: 12px 30px;
-            font-size: 1rem;
             border-radius: 50px;
+            font-size: 1rem;
             cursor: pointer;
-            transition: background 0.3s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        button:active {
-            transform: translateY(2px);
-        }
-
-        #feedback {
-            margin-top: 1rem;
+            color: white;
             font-weight: bold;
-            height: 1.5rem; /* 預留空間防止跳動 */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.96); }
+
+        .btn-check { background-color: var(--primary-color); flex-grow: 1; max-width: 200px; }
+        .btn-check.typing-check { background-color: var(--typing-color); }
+        .btn-clear { background-color: #95a5a6; }
+        .btn-reset { background-color: #34495e; font-size: 0.8rem; padding: 6px 12px;}
+
+        /* 評分按鈕群 */
+        .judgment-btns {
+            display: none;
+            gap: 10px; 
+            width: 100%;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-correct { background-color: var(--success-color); flex: 1; min-width: 80px;}
+        .btn-wrong { background-color: var(--error-color); flex: 1; min-width: 80px;}
+        .btn-note { background-color: var(--note-color); flex: 1; min-width: 100px; display: flex; align-items: center; justify-content: center; gap:5px;}
+
+        .status-bar {
+            font-size: 0.85rem;
+            color: #999;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+            margin-bottom: 30px;
         }
 
-        .correct { color: var(--success-color); }
-        .wrong { color: var(--error-color); }
-        
-        .mode-switch {
-            margin-bottom: 1rem;
-        }
-        
-        .mode-switch label {
-            margin: 0 10px;
-            cursor: pointer;
-        }
+        /* --- Modal 樣式 (不變) --- */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; justify-content: center; align-items: center; }
+        .modal-content { background: white; width: 95%; max-width: 550px; height: 85vh; border-radius: 15px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-header { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; background-color: #fcfcfc; }
+        .btn-close { background: transparent; color: #333; box-shadow: none; font-size: 1.8rem; padding: 0 10px; width: auto; border: none; cursor: pointer; }
+        .modal-tabs { display: flex; background: #eee; }
+        .modal-tab { flex: 1; padding: 12px; text-align: center; cursor: pointer; font-size: 1rem; color: #666; font-weight: bold; }
+        .modal-tab.active { background: white; color: var(--primary-color); border-top: 3px solid var(--primary-color); }
+        .kana-grid { display: grid; gap: 8px; padding-bottom: 20px; }
+        .kana-grid.col-5 { grid-template-columns: repeat(5, 1fr); }
+        .kana-grid.col-3 { grid-template-columns: repeat(3, 1fr); }
+        .kana-card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 6px 2px; text-align: center; background: #fff; display: flex; flex-direction: column; justify-content: center; aspect-ratio: 1 / 1; cursor: pointer; transition: all 0.1s; }
+        .kana-card:active { transform: scale(0.95); background-color: #eef6fc; border-color: var(--primary-color); }
+        .kana-card.empty { border: none; background: transparent; cursor: default; }
+        .kana-card .r { font-size: 0.75rem; color: #999; text-transform: uppercase; }
+        .kana-card .chars { display: flex; justify-content: center; gap: 3px; align-items: baseline; }
+        .kana-card .h, .kana-card .k { font-size: 1.1rem; font-weight: bold; color: #333; }
+        .kana-card .k { color: var(--primary-color); }
+        .mistake-list-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        .mistake-folder { background: #fff; border: 2px solid #ddd; border-radius: 12px; aspect-ratio: 1/1; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.1s; }
+        .mistake-folder:active { transform: scale(0.95); }
+        .mistake-folder.is-h { border-color: var(--primary-color); background: #f0f7ff; }
+        .mistake-folder.is-h .type-badge { background: var(--primary-color); }
+        .mistake-folder.is-k { border-color: var(--kana-k-color); background: #fff8f0; }
+        .mistake-folder.is-k .type-badge { background: var(--kana-k-color); }
+        .mistake-folder .badge { position: absolute; top: -8px; right: -8px; background: #E74C3C; color: white; font-size: 0.75rem; width: 22px; height: 22px; border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .mistake-folder .type-badge { position: absolute; bottom: 5px; color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: bold; }
+        .mistake-folder h3 { margin: 0; font-size: 1.8rem; margin-bottom: 15px; }
+        .mistake-detail-view { display: none; }
+        .mistake-detail-header { display: flex; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .mistake-gallery { display: flex; flex-direction: column; gap: 15px; }
+        .mistake-item { border: 1px solid #ddd; border-radius: 10px; padding: 10px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .mistake-time { font-size: 0.8rem; color: #999; margin-bottom: 5px; }
+        .mistake-img { width: 100%; border-radius: 5px; border: 1px solid #eee; background-color: #f9f9f9; }
+        .empty-state { text-align: center; color: #999; margin-top: 50px; }
+        .note-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .note-item { background: #eef6fc; border-left: 4px solid var(--note-color); padding: 10px; border-radius: 4px; font-size: 0.95rem; color: #333; position: relative; }
+        .note-item .time { font-size: 0.7rem; color: #888; margin-bottom: 4px; display: block;}
+        .note-input-area { border-top: 1px solid #eee; padding-top: 15px; margin-top: auto; }
+        textarea { width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; box-sizing: border-box; resize: none; margin-bottom: 10px; }
+        .btn-save-note { background-color: var(--note-color); color: white; width: 100%; border: none; padding: 12px; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: bold; }
+        .btn-save-note:active { opacity: 0.9; }
+
     </style>
 </head>
 <body>
 
     <div class="app-container">
-        <h1>日文五十音特訓</h1>
-        
-        <div class="score-board">
-            <span>答對: <b id="score">0</b></span>
-            <span>連續: <b id="streak">0</b></span>
+        <div class="top-nav">
+            <button class="btn-nav" onclick="toggleStudyModal()">📖 五十音表</button>
+            <button class="btn-nav btn-mistake" onclick="toggleMistakeModal()">📚 錯字回顧</button>
         </div>
 
-        <div class="mode-switch">
-            <input type="radio" id="mode-hiragana" name="mode" value="h" checked>
-            <label for="mode-hiragana">平假名</label>
-            <input type="radio" id="mode-katakana" name="mode" value="k">
-            <label for="mode-katakana">片假名</label>
+        <div class="settings-panel">
+            <div class="settings-title">
+                <span>範圍設定</span>
+                <button class="btn-reset" onclick="applySettings()">更新題目</button>
+            </div>
+            
+            <div class="mode-toggle-group">
+                <input type="radio" id="mode-h" name="ktype" value="h">
+                <label for="mode-h">平假名</label>
+                <input type="radio" id="mode-k" name="ktype" value="k">
+                <label for="mode-k">片假名</label>
+                <input type="radio" id="mode-mix" name="ktype" value="mix" checked>
+                <label for="mode-mix">混合 (Mix)</label>
+            </div>
+
+            <div class="checkbox-group">
+                <label><input type="checkbox" id="chk-basic" checked> 清音</label>
+                <label><input type="checkbox" id="chk-daku"> 濁音/半濁</label>
+                <label><input type="checkbox" id="chk-youon"> 拗音 (kya)</label>
+                <label><input type="checkbox" id="chk-special"> 特殊 (促/長)</label>
+                <label style="grid-column: span 2; color: var(--accent-color); font-weight:bold;">
+                    <input type="checkbox" id="chk-notebook"> ★ 只練筆記 (弱點)
+                </label>
+            </div>
         </div>
 
-        <div class="character-card" id="display-char">
-            あ
+        <div class="test-mode-switch">
+            <input type="radio" id="test-mode-write" name="testmode" value="write" checked onchange="switchTestMode()">
+            <label for="test-mode-write">✏️ 手寫模式</label>
+            <input type="radio" id="test-mode-type" name="testmode" value="type" onchange="switchTestMode()">
+            <label for="test-mode-type">⌨️ 輸入模式</label>
         </div>
 
-        <div class="input-group">
-            <input type="text" id="user-input" placeholder="輸入羅馬拼音 (例如: a)" autocomplete="off">
+
+        <div class="question-area">
+            <div class="romaji-display" id="q-romaji">...</div>
+            <div class="bookmark-btn" id="bookmark-btn" onclick="toggleBookmark()">★</div>
         </div>
 
-        <button onclick="checkAnswer()">提交答案</button>
+        <div class="canvas-wrapper" id="write-area">
+            <canvas id="drawing-board" width="300" height="300"></canvas>
+        </div>
 
-        <div id="feedback"></div>
+        <div class="typing-input-area" id="type-area">
+            <div class="typing-kana-display" id="typing-kana"></div>
+            <input type="text" id="typing-input" class="typing-input" placeholder="輸入羅馬拼音 (e.g., ki)">
+            <div id="typing-feedback" class="typing-feedback"></div>
+        </div>
+
+
+        <div class="answer-box">
+            <span id="answer-text" class="answer-text text-large"></span>
+            <span id="answer-placeholder" style="color:#ccc; font-size:0.9rem;">(寫/輸入完點擊看答案)</span>
+        </div>
+
+        <div class="controls" id="main-controls">
+            <button class="btn-clear" id="btn-clear" onclick="clearCanvas()">重寫</button>
+            <button class="btn-check" id="btn-check-write" onclick="showAnswer()">看答案</button>
+            <button class="btn-check typing-check" id="btn-check-type" onclick="checkTyping()" style="display:none;">檢查發音</button>
+        </div>
+
+        <div class="controls judgment-btns" id="judge-controls">
+            <button class="btn-wrong" onclick="judge(false)">不熟</button>
+            <button class="btn-note" onclick="openNoteModal()">📝 筆記/提示</button>
+            <button class="btn-correct" onclick="judge(true)">完美</button>
+        </div>
+
+        <div class="status-bar">
+            <span id="pool-status">剩餘: 0</span>
+            <span id="score">得分: 0</span>
+        </div>
+    </div>
+
+    <div id="study-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">五十音對照表 (點擊發音)</h3>
+                <button class="btn-close" onclick="toggleStudyModal()">×</button>
+            </div>
+            <div class="modal-tabs">
+                <div class="modal-tab active" onclick="switchTab(0, this)">清音</div>
+                <div class="modal-tab" onclick="switchTab(1, this)">濁/半濁</div>
+                <div class="modal-tab" onclick="switchTab(2, this)">拗音</div>
+            </div>
+            <div class="modal-body">
+                <div id="kana-table-container" class="kana-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mistake-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">📚 錯字回顧本</h3>
+                <button class="btn-close" onclick="toggleMistakeModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="mistake-list-view">
+                    <p style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align:center;">藍色=平假名 / 橘色=片假名</p>
+                    <div id="mistake-grid" class="mistake-list-grid"></div>
+                    <div id="no-mistakes-msg" class="empty-state" style="display:none;">目前沒有錯字記錄 🎉</div>
+                </div>
+                <div id="mistake-detail-view" class="mistake-detail-view">
+                    <div class="mistake-detail-header">
+                        <button onclick="backToMistakeList()" style="background:#eee; color:#333; padding:5px 15px; font-size:0.9rem; margin-right:15px; border:none; border-radius:5px; cursor:pointer;">← 返回</button>
+                        <div><span id="detail-title" style="font-weight:bold; font-size:1.2rem;"></span></div>
+                    </div>
+                    <div id="mistake-gallery" class="mistake-gallery"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="note-modal" class="modal-overlay">
+        <div class="modal-content" style="height: 60vh; max-height: 500px;">
+            <div class="modal-header">
+                <h3 style="margin:0;" id="note-modal-title">心得筆記</h3>
+                <button class="btn-close" onclick="closeNoteModal()">×</button>
+            </div>
+            <div class="modal-body" style="display:flex; flex-direction:column;">
+                <div id="note-list" class="note-list">
+                    <div style="text-align:center; color:#999; margin-top:20px;">尚無筆記，寫下你的記憶法吧！</div>
+                </div>
+                <div class="note-input-area">
+                    <textarea id="note-input" placeholder="例如：這個字長得像... 要注意筆順..."></textarea>
+                    <button class="btn-save-note" onclick="addNote()">儲存筆記</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
-        /* --- 2. JavaScript 邏輯 (功能與互動) --- */
-
-        // 五十音資料庫 (這裡先列出「阿、卡、薩」三行作為範例，您可以自行擴充)
-        const kanaData = [
-            { r: 'a', h: 'あ', k: 'ア' }, { r: 'i', h: 'い', k: 'イ' }, { r: 'u', h: 'う', k: 'ウ' }, { r: 'e', h: 'え', k: 'エ' }, { r: 'o', h: 'お', k: 'オ' },
-            { r: 'ka', h: 'か', k: 'カ' }, { r: 'ki', h: 'き', k: 'キ' }, { r: 'ku', h: 'く', k: 'ク' }, { r: 'ke', h: 'け', k: 'ケ' }, { r: 'ko', h: 'こ', k: 'コ' },
-            { r: 'sa', h: 'さ', k: 'サ' }, { r: 'shi', h: 'し', k: 'シ' }, { r: 'su', h: 'す', k: 'ス' }, { r: 'se', h: 'せ', k: 'セ' }, { r: 'so', h: 'そ', k: 'ソ' },
-            { r: 'ta', h: 'た', k: 'タ' }, { r: 'chi', h: 'ち', k: 'チ' }, { r: 'tsu', h: 'つ', k: 'ツ' }, { r: 'te', h: 'て', k: 'テ' }, { r: 'to', h: 'と', k: 'ト' },
-            { r: 'na', h: 'な', k: 'ナ' }, { r: 'ni', h: 'に', k: 'ニ' }, { r: 'nu', h: 'ぬ', k: 'ヌ' }, { r: 'ne', h: 'ね', k: 'ネ' }, { r: 'no', h: 'の', k: 'ノ' }
+        /* --- 資料庫 --- */
+        const rawData = [
+            // 清音 t=0
+            { r: 'a', h: 'あ', k: 'ア', t: 0 }, { r: 'i', h: 'い', k: 'イ', t: 0 }, { r: 'u', h: 'う', k: 'ウ', t: 0 }, { r: 'e', h: 'え', k: 'エ', t: 0 }, { r: 'o', h: 'お', k: 'オ', t: 0 },
+            { r: 'ka', h: 'か', k: 'カ', t: 0 }, { r: 'ki', h: 'き', k: 'キ', t: 0 }, { r: 'ku', h: 'く', k: 'ク', t: 0 }, { r: 'ke', h: 'け', k: 'ケ', t: 0 }, { r: 'ko', h: 'こ', k: 'コ', t: 0 },
+            { r: 'sa', h: 'さ', k: 'サ', t: 0 }, { r: 'shi', h: 'し', k: 'シ', t: 0 }, { r: 'su', h: 'す', k: 'ス', t: 0 }, { r: 'se', h: 'せ', k: 'セ', t: 0 }, { r: 'so', h: 'そ', k: 'ソ', t: 0 },
+            { r: 'ta', h: 'た', k: 'タ', t: 0 }, { r: 'chi', h: 'ち', k: 'チ', t: 0 }, { r: 'tsu', h: 'つ', k: 'ツ', t: 0 }, { r: 'te', h: 'て', k: 'テ', t: 0 }, { r: 'to', h: 'と', k: 'ト', t: 0 },
+            { r: 'na', h: 'な', k: 'ナ', t: 0 }, { r: 'ni', h: 'に', k: 'ニ', t: 0 }, { r: 'nu', h: 'ぬ', k: 'ヌ', t: 0 }, { r: 'ne', h: 'ね', k: 'ネ', t: 0 }, { r: 'no', h: 'の', k: 'ノ', t: 0 },
+            { r: 'ha', h: 'は', k: 'ハ', t: 0 }, { r: 'hi', h: 'ひ', k: 'ヒ', t: 0 }, { r: 'fu', h: 'ふ', k: 'フ', t: 0 }, { r: 'he', h: 'へ', k: 'ヘ', t: 0 }, { r: 'ho', h: 'ほ', k: 'ホ', t: 0 },
+            { r: 'ma', h: 'ま', k: 'マ', t: 0 }, { r: 'mi', h: 'み', k: 'ミ', t: 0 }, { r: 'mu', h: 'む', k: 'ム', t: 0 }, { r: 'me', h: 'め', k: 'メ', t: 0 }, { r: 'mo', h: 'も', k: 'モ', t: 0 },
+            { r: 'ya', h: 'や', k: 'ヤ', t: 0 }, { r: 'yu', h: 'ゆ', k: 'ユ', t: 0 }, { r: 'yo', h: 'よ', k: 'ヨ', t: 0 },
+            { r: 'ra', h: 'ら', k: 'ラ', t: 0 }, { r: 'ri', h: 'り', k: 'リ', t: 0 }, { r: 'ru', h: 'る', k: 'ル', t: 0 }, { r: 're', h: 'れ', k: 'レ', t: 0 }, { r: 'ro', h: 'ろ', k: 'ロ', t: 0 },
+            { r: 'wa', h: 'わ', k: 'ワ', t: 0 }, { r: 'wo', h: 'を', k: 'ヲ', t: 0 }, { r: 'n', h: 'ん', k: 'ン', t: 0 },
+            // 濁音 t=1
+            { r: 'ga', h: 'が', k: 'ガ', t: 1 }, { r: 'gi', h: 'ぎ', k: 'ギ', t: 1 }, { r: 'gu', h: 'ぐ', k: 'グ', t: 1 }, { r: 'ge', h: 'げ', k: 'ゲ', t: 1 }, { r: 'go', h: 'ご', k: 'ゴ', t: 1 },
+            { r: 'za', h: 'ざ', k: 'ザ', t: 1 }, { r: 'ji', h: 'じ', k: 'ジ', t: 1 }, { r: 'zu', h: 'ず', k: 'ズ', t: 1 }, { r: 'ze', h: 'ぜ', k: 'ゼ', t: 1 }, { r: 'zo', h: 'ぞ', k: 'ゾ', t: 1 },
+            { r: 'da', h: 'だ', k: 'ダ', t: 1 }, { r: 'ji(di)', h: 'ぢ', k: 'ヂ', t: 1 }, { r: 'zu(du)', h: 'づ', k: 'ヅ', t: 1 }, { r: 'de', h: 'で', k: 'デ', t: 1 }, { r: 'do', h: 'ど', k: 'ド', t: 1 },
+            { r: 'ba', h: 'ば', k: 'バ', t: 1 }, { r: 'bi', h: 'び', k: 'ビ', t: 1 }, { r: 'bu', h: 'ぶ', k: 'ブ', t: 1 }, { r: 'be', h: 'べ', k: 'ベ', t: 1 }, { r: 'bo', h: 'ぼ', k: 'ボ', t: 1 },
+            { r: 'pa', h: 'ぱ', k: 'パ', t: 1 }, { r: 'pi', h: 'ぴ', k: 'ピ', t: 1 }, { r: 'pu', h: 'ぷ', k: 'プ', t: 1 }, { r: 'pe', h: 'ぺ', k: 'ペ', t: 1 }, { r: 'po', h: 'ぽ', k: 'ポ', t: 1 },
+            // 特殊 t=3
+            { r: 'tsu(small)', h: 'っ', k: 'ッ', t: 3 }, { r: '-(Long)', h: 'ー', k: 'ー', t: 3 },
+            // 拗音 t=2
+            { r: 'kya', h: 'きゃ', k: 'キャ', t: 2 }, { r: 'kyu', h: 'きゅ', k: 'キュ', t: 2 }, { r: 'kyo', h: 'きょ', k: 'キョ', t: 2 },
+            { r: 'sha', h: 'しゃ', k: 'シャ', t: 2 }, { r: 'shu', h: 'しゅ', k: 'シュ', t: 2 }, { r: 'sho', h: 'しょ', k: 'ショ', t: 2 },
+            { r: 'cha', h: 'ちゃ', k: 'チャ', t: 2 }, { r: 'chu', h: 'ちゅ', k: 'チュ', t: 2 }, { r: 'cho', h: 'ちょ', k: 'チョ', t: 2 },
+            { r: 'nya', h: 'にゃ', k: 'ニャ', t: 2 }, { r: 'nyu', h: 'にゅ', k: 'ニュ', t: 2 }, { r: 'nyo', h: 'にょ', k: 'ニョ', t: 2 },
+            { r: 'hya', h: 'ひゃ', k: 'ヒャ', t: 2 }, { r: 'hyu', h: 'ひゅ', k: 'ヒュ', t: 2 }, { r: 'hyo', h: 'ひょ', k: 'ヒョ', t: 2 },
+            { r: 'mya', h: 'みゃ', k: 'ミャ', t: 2 }, { r: 'myu', h: 'みゅ', k: 'ミュ', t: 2 }, { r: 'myo', h: 'みょ', k: 'ミョ', t: 2 },
+            { r: 'rya', h: 'りゃ', k: 'リャ', t: 2 }, { r: 'ryu', h: 'りゅ', k: 'リュ', t: 2 }, { r: 'ryo', h: 'りょ', k: 'リョ', t: 2 },
+            { r: 'gya', h: 'ぎゃ', k: 'ギャ', t: 2 }, { r: 'gyu', h: 'ぎゅ', k: 'ギュ', t: 2 }, { r: 'gyo', h: 'ぎょ', k: 'ギョ', t: 2 },
+            { r: 'ja', h: 'じゃ', k: 'ジャ', t: 2 }, { r: 'ju', h: 'じゅ', k: 'ジュ', t: 2 }, { r: 'jo', h: 'じょ', k: 'ジョ', t: 2 },
+            { r: 'bya', h: 'びゃ', k: 'ビャ', t: 2 }, { r: 'byu', h: 'びゅ', k: 'ビュ', t: 2 }, { r: 'byo', h: 'びょ', k: 'ビョ', t: 2 },
+            { r: 'pya', h: 'ぴゃ', k: 'ピャ', t: 2 }, { r: 'pyu', h: 'ぴゅ', k: 'ピュ', t: 2 }, { r: 'pyo', h: 'ぴょ', k: 'ピョ', t: 2 }
         ];
+        
+        // 羅馬拼音的替代寫法 (用於輸入模式檢查)
+        const ALT_ROMAJI = {
+            'chi': ['ti'],
+            'tsu': ['tu'],
+            'shi': ['si'],
+            'ji': ['zi'],
+            'fu': ['hu'],
+            'ji(di)': ['di'],
+            'zu(du)': ['du'],
+            'tsu(small)': ['xtu', 'ltu'],
+            '-(long)': ['-'],
+            'kya': ['kixya'], 'kyu': ['kixyu'], 'kyo': ['kixyo'],
+            'sha': ['sixya'], 'shu': ['sixyu'], 'sho': ['sixyo'],
+            'cha': ['tixya'], 'chu': ['tixyu'], 'cho': ['tixyo'],
+            'ja': ['zixya', 'jixya'], 'ju': ['zixyu', 'jixyu'], 'jo': ['zixyo', 'jixyo'],
+        };
 
-        let currentQuestion = {};
+
+        /* --- 變數 --- */
+        let questionPool = []; 
+        let currentQ = {};
         let score = 0;
-        let streak = 0;
+        let isDrawing = false;
+        let bookmarks = new Set();
+        let mistakesDB = {}; 
+        let notesDB = {}; 
+        let currentType = 'k'; // h=平, k=片
+        let currentTestMode = 'write'; // 'write' or 'type'
 
-        const displayChar = document.getElementById('display-char');
-        const userInput = document.getElementById('user-input');
-        const feedback = document.getElementById('feedback');
+        const canvas = document.getElementById('drawing-board');
+        const ctx = canvas.getContext('2d');
+        const writeArea = document.getElementById('write-area');
+        const typeArea = document.getElementById('type-area');
+        const typingKanaDisplay = document.getElementById('typing-kana');
+        const typingInput = document.getElementById('typing-input');
+        const typingFeedback = document.getElementById('typing-feedback');
+        
+        const answerText = document.getElementById('answer-text');
+        const answerPlaceholder = document.getElementById('answer-placeholder');
+        const qRomaji = document.getElementById('q-romaji');
         const scoreDisplay = document.getElementById('score');
-        const streakDisplay = document.getElementById('streak');
-        const radioHiragana = document.getElementById('mode-hiragana');
-        const radioKatakana = document.getElementById('mode-katakana');
+        const poolStatus = document.getElementById('pool-status');
+        const mainControls = document.getElementById('main-controls');
+        const judgeControls = document.getElementById('judge-controls');
+        const bookmarkBtn = document.getElementById('bookmark-btn');
+        
+        const btnClear = document.getElementById('btn-clear');
+        const btnCheckWrite = document.getElementById('btn-check-write');
+        const btnCheckType = document.getElementById('btn-check-type');
+        
+        const modeRadioH = document.getElementById('mode-h');
+        const modeRadioK = document.getElementById('mode-k');
+        const modeRadioMix = document.getElementById('mode-mix');
+        
+        const chkBasic = document.getElementById('chk-basic');
+        const chkDaku = document.getElementById('chk-daku');
+        const chkYouon = document.getElementById('chk-youon');
+        const chkSpecial = document.getElementById('chk-special');
+        const chkNotebook = document.getElementById('chk-notebook');
 
-        // 初始化
-        window.onload = nextQuestion;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#2c3e50';
 
-        // 監聽 Enter 鍵
-        userInput.addEventListener("keypress", function(event) {
-            if (event.key === "Enter") {
-                checkAnswer();
+        /* --- 初始化 & 資料載入 --- */
+        window.onload = function() {
+            loadBookmarks();
+            loadMistakes();
+            loadNotes();
+            
+            // 監聽輸入框的 Enter 鍵
+            typingInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    if (currentTestMode === 'type' && mainControls.style.display === 'flex') {
+                        checkTyping();
+                    }
+                }
+            });
+
+            applySettings();
+            switchTestMode(); // 確保模式 UI 正確
+            renderTable(0); 
+        };
+
+        function loadBookmarks() {
+            const saved = localStorage.getItem('kana_bookmarks_v2');
+            if (saved) bookmarks = new Set(JSON.parse(saved));
+        }
+        function saveBookmarks() {
+            localStorage.setItem('kana_bookmarks_v2', JSON.stringify([...bookmarks]));
+        }
+        function loadMistakes() {
+            const saved = localStorage.getItem('kana_mistakes_v3');
+            if (saved) mistakesDB = JSON.parse(saved);
+        }
+        function saveMistakeToDB(romaji, data, type, mode) {
+            const key = `${type}_${romaji}`;
+            if (!mistakesDB[key]) mistakesDB[key] = [];
+            // data 可以是 imageData (手寫) 或 wrongInput (輸入模式)
+            mistakesDB[key].unshift({ time: new Date().getTime(), data: data, mode: mode }); 
+            if (mistakesDB[key].length > 5) mistakesDB[key].pop(); 
+            localStorage.setItem('kana_mistakes_v3', JSON.stringify(mistakesDB));
+        }
+        function loadNotes() {
+            const saved = localStorage.getItem('kana_notes_v1');
+            if (saved) notesDB = JSON.parse(saved);
+        }
+        function saveNotesToDB() {
+            localStorage.setItem('kana_notes_v1', JSON.stringify(notesDB));
+        }
+
+        /* --- 模式切換 --- */
+        function switchTestMode() {
+            currentTestMode = document.querySelector('input[name="testmode"]:checked').value;
+            
+            if (currentTestMode === 'write') {
+                writeArea.style.display = 'block';
+                typeArea.style.display = 'none';
+                btnCheckWrite.style.display = 'inline-block';
+                btnCheckType.style.display = 'none';
+                btnClear.style.display = 'inline-block';
+                qRomaji.style.display = 'flex'; // 羅馬拼音作爲題目
+                typingKanaDisplay.style.display = 'none'; // 隱藏假名題目
+                
+            } else { // 'type' mode
+                writeArea.style.display = 'none';
+                typeArea.style.display = 'flex';
+                btnCheckWrite.style.display = 'none';
+                btnCheckType.style.display = 'inline-block';
+                btnClear.style.display = 'none';
+                qRomaji.style.display = 'none'; // 隱藏羅馬拼音題目
+                typingKanaDisplay.style.display = 'block'; // 假名作爲題目
+
+                // 切換模式時重新開始一題，確保 UI 正確
+                applySettings();
+                typingInput.focus();
             }
-        });
+            // 重新載入題目以更新 UI
+            applySettings();
+        }
 
-        // 監聽模式切換
-        radioHiragana.addEventListener('change', nextQuestion);
-        radioKatakana.addEventListener('change', nextQuestion);
+
+        /* --- 主邏輯 --- */
+        function applySettings() {
+            const useBasic = chkBasic.checked;
+            const useDaku = chkDaku.checked;
+            const useYouon = chkYouon.checked;
+            const useSpecial = chkSpecial.checked;
+            const onlyNotebook = chkNotebook.checked;
+
+            if (!useBasic && !useDaku && !useYouon && !useSpecial && !onlyNotebook) {
+                alert("請至少選擇一個範圍！");
+                chkBasic.checked = true;
+                applySettings();
+                return;
+            }
+
+            let filteredData = rawData.filter(item => {
+                if (item.t === 0 && useBasic) return true;
+                if (item.t === 1 && useDaku) return true;
+                if (item.t === 2 && useYouon) return true;
+                if (item.t === 3 && useSpecial) return true;
+                return false;
+            });
+
+            if (onlyNotebook) {
+                filteredData = rawData.filter(item => bookmarks.has(item.r));
+                if (filteredData.length === 0) {
+                    alert("筆記本是空的！");
+                    chkNotebook.checked = false;
+                    applySettings();
+                    return;
+                }
+            }
+
+            questionPool = [...filteredData];
+            score = 0;
+            scoreDisplay.innerText = `得分: ${score}`;
+            nextQuestion();
+        }
 
         function nextQuestion() {
-            // 清空輸入框與回饋
-            userInput.value = '';
-            feedback.className = ''; 
-            feedback.innerText = '';
-            
-            // 隨機選一個字
-            const randomIndex = Math.floor(Math.random() * kanaData.length);
-            currentQuestion = kanaData[randomIndex];
-
-            // 根據模式顯示平假名或片假名
-            if (radioHiragana.checked) {
-                displayChar.innerText = currentQuestion.h;
-            } else {
-                displayChar.innerText = currentQuestion.k;
+            if (questionPool.length === 0) {
+                alert("練習完畢！重新開始。");
+                applySettings(); 
+                return;
             }
+
+            // 重置 UI
+            clearCanvas();
+            typingInput.value = '';
+            typingFeedback.innerText = '';
+            answerText.style.display = 'none';
+            answerPlaceholder.style.display = 'block';
+            mainControls.style.display = 'flex';
+            judgeControls.style.display = 'none';
+            poolStatus.innerText = `剩餘: ${questionPool.length}`;
+
+            // 隨機選題
+            const idx = Math.floor(Math.random() * questionPool.length);
+            currentQ = questionPool[idx];
+            questionPool.splice(idx, 1);
+
+            // 決定這題的類型 (平假名 vs 片假名)
+            if (modeRadioMix.checked) {
+                currentType = Math.random() < 0.5 ? 'h' : 'k';
+            } else if (modeRadioK.checked) {
+                currentType = 'k';
+            } else {
+                currentType = 'h';
+            }
+
+            // 更新題目顯示 UI
+            const label = currentType === 'h' ? '平' : '片';
+            const color = currentType === 'h' ? 'var(--primary-color)' : 'var(--kana-k-color)';
             
-            // 聚焦輸入框
-            userInput.focus();
+            if (currentTestMode === 'write') {
+                // 手寫模式：顯示羅馬拼音和要求寫的類型
+                qRomaji.innerHTML = `
+                    ${currentQ.r.toUpperCase()} 
+                    <span class="type-tag" style="color:${color}; border-color:${color};">${label}</span>
+                `;
+            } else {
+                // 輸入模式：顯示假名 (根據類型)
+                const kanaChar = currentType === 'k' ? currentQ.k : currentQ.h;
+                typingKanaDisplay.innerText = kanaChar;
+            }
+
+            updateBookmarkUI();
+            
+            if (currentTestMode === 'type') {
+                typingInput.focus();
+            }
         }
 
-        function checkAnswer() {
-            const answer = userInput.value.trim().toLowerCase();
-            
-            if (answer === '') return;
+        function toggleBookmark() {
+            if (bookmarks.has(currentQ.r)) bookmarks.delete(currentQ.r);
+            else bookmarks.add(currentQ.r);
+            saveBookmarks();
+            updateBookmarkUI();
+        }
 
-            if (answer === currentQuestion.r) {
-                // 答對了
-                feedback.innerText = '✅ 正確！ (' + currentQuestion.r + ')';
-                feedback.className = 'correct';
-                score++;
-                streak++;
-                scoreDisplay.innerText = score;
-                streakDisplay.innerText = streak;
+        function updateBookmarkUI() {
+            bookmarkBtn.classList.toggle('active', bookmarks.has(currentQ.r));
+            bookmarkBtn.innerText = bookmarks.has(currentQ.r) ? '★' : '☆';
+        }
+
+        /* --- 手寫模式邏輯 --- */
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+        function startDraw(e) {
+            if (currentTestMode !== 'write') return;
+            if(e.type === 'touchstart') e.preventDefault();
+            isDrawing = true;
+            ctx.beginPath();
+            const {x, y} = getPos(e);
+            ctx.moveTo(x, y);
+        }
+        function draw(e) {
+            if (!isDrawing || currentTestMode !== 'write') return;
+            if(e.type === 'touchmove') e.preventDefault();
+            const {x, y} = getPos(e);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+        function endDraw() { isDrawing = false; }
+
+        canvas.addEventListener('mousedown', startDraw);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', endDraw);
+        canvas.addEventListener('mouseleave', endDraw);
+        canvas.addEventListener('touchstart', startDraw, { passive: false });
+        canvas.addEventListener('touchmove', draw, { passive: false });
+        canvas.addEventListener('touchend', endDraw);
+
+        function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+        function showAnswer() {
+            // 僅在手寫模式下顯示答案
+            if (currentTestMode === 'write') {
+                const answerChar = currentType === 'k' ? currentQ.k : currentQ.h;
+                answerText.innerText = answerChar;
+                answerText.className = answerChar.length > 1 ? "answer-text text-medium" : "answer-text text-large";
                 
-                // 延遲一下自動跳下一題
-                setTimeout(nextQuestion, 1000);
-            } else {
-                // 答錯了
-                feedback.innerText = '❌ 錯誤，正確答案是: ' + currentQuestion.r;
-                feedback.className = 'wrong';
-                streak = 0;
-                streakDisplay.innerText = streak;
-                // 答錯不自動跳下一題，讓使用者看清楚
+                answerText.style.display = 'block';
+                answerPlaceholder.style.display = 'none';
+                mainControls.style.display = 'none';
+                judgeControls.style.display = 'flex';
             }
         }
+
+        function judge(isCorrect) {
+            if (isCorrect) {
+                score++;
+                scoreDisplay.innerText = `得分: ${score}`;
+            } else if (currentTestMode === 'write') {
+                // 儲存手寫圖片
+                const wrongImg = canvas.toDataURL("image/png");
+                saveMistakeToDB(currentQ.r, wrongImg, currentType, 'write');
+            } else if (currentTestMode === 'type') {
+                // 儲存錯誤的輸入
+                const wrongInput = typingInput.value.trim().toLowerCase();
+                saveMistakeToDB(currentQ.r, wrongInput, currentType, 'type');
+            }
+            setTimeout(nextQuestion, 200);
+        }
+
+        /* --- 輸入模式邏輯 (New) --- */
+        function checkTyping() {
+            if (currentTestMode !== 'type') return;
+
+            const input = typingInput.value.trim().toLowerCase();
+            const correctRomaji = currentQ.r.toLowerCase();
+
+            // 檢查主要答案
+            let isCorrect = (input === correctRomaji);
+
+            // 檢查替代答案
+            if (!isCorrect && ALT_ROMAJI[correctRomaji]) {
+                isCorrect = ALT_ROMAJI[correctRomaji].includes(input);
+            }
+            
+            // 特殊處理: N/n 的多種寫法 (ni, nn, n)
+            if (correctRomaji === 'n' && (input === 'nn' || input === 'n')) {
+                isCorrect = true;
+            }
+
+            if (isCorrect) {
+                typingFeedback.className = 'typing-feedback feedback-correct';
+                typingFeedback.innerText = '✅ 正確！';
+                
+                // 顯示答案假名，但答案區不顯示，直接跳下一題
+                setTimeout(() => judge(true), 500); 
+            } else {
+                typingFeedback.className = 'typing-feedback feedback-wrong';
+                typingFeedback.innerText = `❌ 錯誤！正確答案是: ${correctRomaji.toUpperCase()}`;
+                
+                // 提示後，等待使用者手動點擊「不熟」或「完美」
+                showTypingAnswer(correctRomaji);
+            }
+        }
+        
+        function showTypingAnswer(correctRomaji) {
+            // 在答案區顯示正確的羅馬拼音
+            answerText.innerText = correctRomaji.toUpperCase();
+            answerText.className = "answer-text text-medium";
+            
+            answerText.style.display = 'block';
+            answerPlaceholder.style.display = 'none';
+            mainControls.style.display = 'none';
+            judgeControls.style.display = 'flex';
+        }
+
+
+        /* --- 筆記本 Modal 邏輯 --- */
+        function openNoteModal() {
+            const modal = document.getElementById('note-modal');
+            modal.style.display = 'flex';
+            
+            const char = currentType === 'k' ? currentQ.k : currentQ.h;
+            const typeText = currentType === 'k' ? '片假名' : '平假名';
+            
+            document.getElementById('note-modal-title').innerText = `筆記：${char} (${currentQ.r.toUpperCase()}) - ${typeText}`;
+            renderNoteList(currentType, currentQ.r);
+        }
+
+        function closeNoteModal() {
+            document.getElementById('note-modal').style.display = 'none';
+        }
+
+        function renderNoteList(type, romaji) {
+            const key = `${type}_${romaji}`;
+            const listContainer = document.getElementById('note-list');
+            listContainer.innerHTML = ''; 
+            const notes = notesDB[key] || [];
+            if (notes.length === 0) {
+                listContainer.innerHTML = '<div style="text-align:center; color:#999; margin-top:20px;">尚無筆記，寫下你的記憶法吧！</div>';
+                return;
+            }
+            notes.forEach(note => {
+                const date = new Date(note.time);
+                const timeStr = date.toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                const div = document.createElement('div');
+                div.className = 'note-item';
+                div.innerHTML = `<span class="time">${timeStr}</span><div>${note.text}</div>`;
+                listContainer.appendChild(div);
+            });
+            listContainer.scrollTop = listContainer.scrollHeight;
+        }
+
+        function addNote() {
+            const input = document.getElementById('note-input');
+            const text = input.value.trim();
+            if (!text) return;
+            const key = `${currentType}_${currentQ.r}`;
+            if (!notesDB[key]) notesDB[key] = [];
+            notesDB[key].push({ time: new Date().getTime(), text: text });
+            saveNotesToDB();
+            input.value = ''; 
+            renderNoteList(currentType, currentQ.r); 
+        }
+
+        /* --- 學習表 (含發音) --- */
+        function toggleStudyModal() {
+            const modal = document.getElementById('study-modal');
+            modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
+        }
+        function switchTab(type, el) {
+            document.querySelectorAll('#study-modal .modal-tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            renderTable(type);
+        }
+        function renderTable(type) {
+            const container = document.getElementById('kana-table-container');
+            container.innerHTML = ''; container.className = 'kana-grid'; 
+            
+            const createCard = (item) => {
+                const div = document.createElement('div'); div.className = 'kana-card';
+                div.onclick = () => playKana(item.h);
+                div.innerHTML = `<div class="r">${item.r}</div><div class="chars"><span class="h">${item.h}</span><span class="k">${item.k}</span></div>`;
+                return div;
+            };
+            const createEmpty = () => { const div = document.createElement('div'); div.className = 'kana-card empty'; return div; };
+
+            if (type === 0) {
+                container.classList.add('col-5');
+                rawData.slice(0, 35).forEach(item => container.appendChild(createCard(item)));
+                const yaRow = rawData.slice(35, 38);
+                [yaRow[0], null, yaRow[1], null, yaRow[2]].forEach(i => container.appendChild(i ? createCard(i) : createEmpty()));
+                rawData.slice(38, 43).forEach(item => container.appendChild(createCard(item)));
+                const waRow = rawData.slice(43, 45);
+                [waRow[0], null, null, null, waRow[1]].forEach(i => container.appendChild(i ? createCard(i) : createEmpty()));
+                container.appendChild(createCard(rawData[45]));
+            } else if (type === 1) {
+                container.classList.add('col-5');
+                rawData.filter(d => d.t === 1).forEach(item => container.appendChild(createCard(item)));
+            } else if (type === 2) {
+                container.classList.add('col-3');
+                rawData.filter(d => d.t === 2).forEach(item => container.appendChild(createCard(item)));
+            }
+        }
+
+        /* --- 錯字本 --- */
+        function toggleMistakeModal() {
+            const modal = document.getElementById('mistake-modal');
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            } else {
+                modal.style.display = 'flex';
+                renderMistakeList();
+                document.getElementById('mistake-list-view').style.display = 'block';
+                document.getElementById('mistake-detail-view').style.display = 'none';
+            }
+        }
+        function renderMistakeList() {
+            const grid = document.getElementById('mistake-grid');
+            const emptyMsg = document.getElementById('no-mistakes-msg');
+            grid.innerHTML = '';
+            const keys = Object.keys(mistakesDB).filter(k => mistakesDB[k].length > 0);
+            if (keys.length === 0) { emptyMsg.style.display = 'block'; return; }
+            emptyMsg.style.display = 'none';
+            keys.sort(); 
+            keys.forEach(key => {
+                const parts = key.split('_'); if (parts.length < 2) return; 
+                const type = parts[0]; const romaji = parts[1];
+                const item = rawData.find(d => d.r === romaji);
+                const count = mistakesDB[key].length;
+                const folder = document.createElement('div');
+                folder.className = `mistake-folder ${type === 'h' ? 'is-h' : 'is-k'}`;
+                const displayChar = (type === 'h') ? (item ? item.h : '?') : (item ? item.k : '?');
+                const typeLabel = (type === 'h') ? '平' : '片';
+                folder.onclick = () => showMistakeDetail(key, type, romaji, item);
+                folder.innerHTML = `<div class="badge">${count}</div><h3>${displayChar}</h3><div class="type-badge">${typeLabel}</div>`;
+                grid.appendChild(folder);
+            });
+        }
+        function showMistakeDetail(key, type, romaji, itemData) {
+            document.getElementById('mistake-list-view').style.display = 'none';
+            document.getElementById('mistake-detail-view').style.display = 'block';
+            const displayChar = (type === 'h') ? itemData.h : itemData.k;
+            const typeText = (type === 'h') ? '平假名' : '片假名';
+            document.getElementById('detail-title').innerText = `${displayChar} (${romaji.toUpperCase()})`;
+            const gallery = document.getElementById('mistake-gallery'); gallery.innerHTML = '';
+            mistakesDB[key].forEach(record => {
+                const date = new Date(record.time);
+                const timeStr = date.toLocaleString('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+                const div = document.createElement('div'); div.className = 'mistake-item';
+                let content;
+                if (record.mode === 'write') {
+                    content = `<img src="${record.data}" class="mistake-img">`;
+                } else if (record.mode === 'type') {
+                    content = `<div style="text-align:center; font-size:1.5rem; color:${record.data === itemData.r.toLowerCase() ? 'var(--success-color)' : 'var(--error-color)'}; border:1px dashed #ddd; padding:10px; border-radius:5px;">輸入錯誤: **${record.data}**</div><p style="font-size:0.9rem; color:#888; text-align:center; margin-top:5px;">(正確答案: ${itemData.r.toUpperCase()})</p>`;
+                }
+                div.innerHTML = `<div class="mistake-time">🕒 ${timeStr} (${record.mode === 'write' ? '手寫' : '輸入'})</div>${content}`;
+                gallery.appendChild(div);
+            });
+        }
+        function backToMistakeList() {
+            document.getElementById('mistake-list-view').style.display = 'block';
+            document.getElementById('mistake-detail-view').style.display = 'none';
+        }
+
     </script>
 </body>
 </html>
